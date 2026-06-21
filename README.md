@@ -28,6 +28,17 @@ docker run --env-file .env react-agent python main.py --task "What is the speed 
 docker run --env-file .env react-agent python main.py --task-id 2
 ```
 
+**Single custom task with custom max calls and max cost:**
+```bash
+docker run --env-file .env react-agent python main.py --task "What is the speed of light?" --max_iter 5 --max_cost 0.00025
+```
+
+**Specific test task (1–5) with custom max calls and max cost:**
+```bash
+docker run --env-file .env react-agent python main.py --task-id 2 --max_iter 5 --max_cost 0.00025
+```
+
+
 ---
 
 ## Architecture Overview
