@@ -33,10 +33,10 @@ docker run --env-file .env react-agent python main.py --task-id 2
 ## Architecture Overview
 
 The system consists of four layers:\
-(1) a **Budget Enforcer** that wraps every LLM call and raises a hard `BudgetExceededError` the moment either the 10-call or $0.20 limit is hit, halting execution immediately;\ 
-(2) a **ReAct Agent Loop** that cycles through Think → Act → Observe → Reflect steps, tracking progress and triggering replanning when stuck;\
-(3) a **Tool Registry** with three tools (web search, code execution, CSV analysis), each with hard timeouts;\ 
-(4) an **AgentState** dataclass passed through the whole loop that records every step, budget consumption, and the final answer or stop reason.\
+(1) a **Budget Enforcer** that wraps every LLM call and raises a hard `BudgetExceededError` the moment either the 10-call or $0.20 limit is hit, halting execution immediately; \ 
+(2) a **ReAct Agent Loop** that cycles through Think → Act → Observe → Reflect steps, tracking progress and triggering replanning when stuck; \
+(3) a **Tool Registry** with three tools (web search, code execution, CSV analysis), each with hard timeouts; \ 
+(4) an **AgentState** dataclass passed through the whole loop that records every step, budget consumption, and the final answer or stop reason. \
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -69,7 +69,7 @@ The system consists of four layers:\
 
 **Why ReAct?** 
 
-ReAct combines reasoning and acting in a tight loop, making each step clear an d easy to check. This is important for a budget-constrained agent: every LLM call is visible in the trace, making it straightforward to see exactly when the budget was consumed and why. The biggest weakness of ReAct is its **token inefficiency** — each iteration re-sends the full conversation history (all prior thoughts, actions, and observations) to the LLM. In a 10-call budget, this means later calls consume substantially more tokens than early calls, compressing the effective budget and making it harder to complete complex multi-step tasks within cost limits.
+ReAct combines reasoning and acting in a tight loop, making each step clear an d easy to check. This is important for a budget-constrained agent: every LLM call is visible in the trace, making it straightforward to see exactly when the budget was consumed and why. The biggest weakness of ReAct is its **token inefficiency**, each iteration re-sends the full conversation history (all prior thoughts, actions, and observations) to the LLM. In a 10-call budget, this means later calls consume substantially more tokens than early calls, compressing the effective budget and making it harder to complete complex multi-step tasks within cost limits.
 
 ---
 
@@ -120,17 +120,20 @@ Three distinct prompts serve three distinct purposes:
 ## Failure Modes
 
 **While Testing Task 4 - Adversarial: Impossible Search Loop**
-- **Reflect over-sensitivity:** In iterations 1 and 2, the reflect LLM returned `made_progress: true` even though the search results were entirely unrelated to the target phrase. This delayed stuck detection by 2 full iterations, wasting 4 LLM calls before the agent considered replanning.
-- **Replan repeated the same query:** At iteration 4, the replan produced `web_search("'xq9z7k2m'")` — the exact same query from the previous replan. The replan LLM ignored its own instruction to try a completely different strategy, returning the same SEC.gov result both times.
-- **Adversarial prompt override:** The explicit instruction "do not give up and do not provide a final answer" prevented the agent from recognizing an unsatisfiable task. A more robust agent would detect that no meaningful results exist and override the prompt constraint with a final answer.
+- **Reflect over-sensitivity:** 
+    - In iterations 1 and 2, the reflect LLM returned `made_progress: true` even though the search results were entirely unrelated to the target phrase. This delayed stuck detection by 2 full iterations, wasting 4 LLM calls before the agent considered replanning.
+- **Replan repeated the same query:** 
+    - At iteration 4, the replan produced `web_search("'xq9z7k2m'")`, the exact same query from the previous replan. The replan LLM ignored its own instruction to try a completely different strategy, returning the same SEC.gov result both times.
+- **Adversarial prompt override:** 
+    - The explicit instruction "do not give up and do not provide a final answer" prevented the agent from recognizing an unsatisfiable task. A more robust agent would detect that no meaningful results exist and override the prompt constraint with a final answer.
 
 **While Testing Task 5 - Adversarial: Budget Blowout (Cost)**
-- **No awareness of sandbox restrictions** 
-At iteration 3, the replan LLM tried to fetch URLs using requests inside execute_code. This is explicitly blocked by the code executor. The replan LLM had no awareness of the sandbox restrictions, so it wasted a call generating code that could never work. The blocked imports list should be included in the system prompt so the LLM doesn't attempt them.
-- **Replan kept suggesting same class of action**
-Every replan produced another web_search with a slightly reworded query. The replan prompt says "completely different strategy" but the LLM interpreted that as "different search terms" rather than actually changing approach.
-- **Reflect false positives again in early iterations**
-Iterations 1 and 2 got made_progress: true even though the search results were just Wikipedia GDP list links, not actual data compiled for all 195 countries. Same pattern as Task 4, confirming the reflect prompt is systematically too lenient about what counts as progress.
+- **No awareness of sandbox restrictions:** 
+ - At iteration 3, the replan LLM tried to fetch URLs using requests inside execute_code. This is explicitly blocked by the code executor. The replan LLM had no awareness of the sandbox restrictions, so it wasted a call generating code that could never work. The blocked imports list should be included in the system prompt so the LLM doesn't attempt them.
+- **Replan kept suggesting same class of action:**
+ - Every replan produced another web_search with a slightly reworded query. The replan prompt says "completely different strategy" but the LLM interpreted that as "different search terms" rather than actually changing approach.
+- **Reflect false positives again in early iterations:**
+ - Iterations 1 and 2 got made_progress: true even though the search results were just Wikipedia GDP list links, not actual data compiled for all 195 countries. Same pattern as Task 4, confirming the reflect prompt is systematically too lenient about what counts as progress.
 
 
 ---
@@ -140,7 +143,7 @@ Iterations 1 and 2 got made_progress: true even though the search results were j
 Based on the failure modes across task 4 and task 5, the most impactful future work entry would be :
 
 **Smarter reflection and task feasibility detection**
-The current reflect prompt evaluates each step in isolation and is systematically too lenient. It returned made_progress: true in both adversarial tasks when results were clearly irrelevant, delaying stuck detection by 2–4 calls each time. Additionally, the agent has no upfront feasibility check: in Task 5 it never recognized that researching 195 countries was impossible within a 25-call budget, and in Task 4 it never recognized the search term was unsatisfiable.
+ - The current reflect prompt evaluates each step in isolation and is systematically too lenient. It returned made_progress: true in both adversarial tasks when results were clearly irrelevant, delaying stuck detection by 2–4 calls each time. Additionally, the agent has no upfront feasibility check: in Task 5 it never recognized that researching 195 countries was impossible within a 25-call budget, and in Task 4 it never recognized the search term was unsatisfiable.
 With more time, I would add two things:
 1. A deterministic pre-reflection heuristic
 - A rule-based filter that runs before asking LLM to reflect. for e.g. checking whether the action input is identical to a previous call or whether the tool returned error/empty result. This would save call each time by blocking the call to LLM reflect call.
