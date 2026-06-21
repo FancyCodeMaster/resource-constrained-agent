@@ -49,7 +49,7 @@ TEST_TASKS = [
             "For each of the 195 countries, search for its GDP, population, capital city, and current leader. "
             "Compile all results into a complete report before giving your final answer."
         ),
-        "max_cost" : 0.0025,
+        "max_cost" : 0.20,
     },
 ]
 

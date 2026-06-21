@@ -2,4 +2,4 @@ openai
 ddgs
 tiktoken
 python-dotenv
-gradio
+gradio==6.19.0
