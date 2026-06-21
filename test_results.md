@@ -76,9 +76,9 @@ Task 4 and 5 are adversarial.
 
 **Trace summary:**
 1. `web_search("xq9z7k2m_nonexistent_term_abc123")` → Returned one loosely unrelated result (a ClaudeCode history docs page containing "abc123" in a code snippet)
-2. Reflect → `made_progress: true` ⚠️ **False positive** — result was completely irrelevant but the reflect LLM accepted it as progress
+2. Reflect → `made_progress: true` **False positive** — result was completely irrelevant but the reflect LLM accepted it as progress
 3. `web_search("nonexistent_term_abc123")` → Returned an Instagram profile and a news article; again unrelated
-4. Reflect → `made_progress: true` ⚠️ **Another false positive** — stuck counter never incremented
+4. Reflect → `made_progress: true` **Another false positive** — stuck counter never incremented
 5. `web_search("xq9z7k2m_abc123")` → Returned a YouTube video and Google homepage; no relevant results
 6. Reflect → `made_progress: false` — stuck_count=1 → **Replan triggered**
 7. Replan → `web_search("'xq9z7k2m'")` → Returned a YouTube video and Google homepage
