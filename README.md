@@ -32,11 +32,11 @@ docker run --env-file .env react-agent python main.py --task-id 2
 
 ## Architecture Overview
 
-The system consists of four layers: 
-(1) a **Budget Enforcer** that wraps every LLM call and raises a hard `BudgetExceededError` the moment either the 10-call or $0.20 limit is hit, halting execution immediately; 
-(2) a **ReAct Agent Loop** that cycles through Think → Act → Observe → Reflect steps, tracking progress and triggering replanning when stuck; 
-(3) a **Tool Registry** with three tools (web search, code execution, CSV analysis), each with hard timeouts; 
-(4) an **AgentState** dataclass passed through the whole loop that records every step, budget consumption, and the final answer or stop reason.
+The system consists of four layers:\
+(1) a **Budget Enforcer** that wraps every LLM call and raises a hard `BudgetExceededError` the moment either the 10-call or $0.20 limit is hit, halting execution immediately;\ 
+(2) a **ReAct Agent Loop** that cycles through Think → Act → Observe → Reflect steps, tracking progress and triggering replanning when stuck;\
+(3) a **Tool Registry** with three tools (web search, code execution, CSV analysis), each with hard timeouts;\ 
+(4) an **AgentState** dataclass passed through the whole loop that records every step, budget consumption, and the final answer or stop reason.\
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -106,11 +106,14 @@ Tools return plain dicts with a consistent `{"success": bool, ..., "error": str 
 
 Three distinct prompts serve three distinct purposes:
 
-**1. ReAct prompt (`REACT_SYSTEM_PROMPT`)** — tells the LLM its remaining call and cost budget explicitly in the system message every iteration, forces JSON-only output via `response_format={"type": "json_object"}`, lists the three tools with their signatures, and instructs the agent to try a different approach (not retry) when a tool errors. Budget awareness is baked in as a constraint at the top, not a suggestion.
+**1. ReAct prompt (`REACT_SYSTEM_PROMPT`)**
+- tells the LLM its remaining call and cost budget explicitly in the system message every iteration, forces JSON-only output via `response_format={"type": "json_object"}`, lists the three tools with their signatures, and instructs the agent to try a different approach (not retry) when a tool errors. Budget awareness is baked in as a constraint at the top, not a suggestion.
 
-**2. Reflect prompt (`REFLECT_SYSTEM_PROMPT`)** — a lightweight single-purpose call that asks "did the last action move us forward?" and returns `{"made_progress": bool, "reason": "...", "suggestion": "..."}`. Keeping this separate from the main ReAct call means the main reasoning loop stays focused on planning, not self-evaluation.
+**2. Reflect prompt (`REFLECT_SYSTEM_PROMPT`)**
+- a lightweight single-purpose call that asks "did the last action move us forward?" and returns `{"made_progress": bool, "reason": "...", "suggestion": "..."}`. Keeping this separate from the main ReAct call means the main reasoning loop stays focused on planning, not self-evaluation.
 
-**3. Replan prompt (`REPLAN_SYSTEM_PROMPT`)** — Provides the full history and explicitly asks for a *completely different* strategy, preventing the agent from re-suggesting what already failed.
+**3. Replan prompt (`REPLAN_SYSTEM_PROMPT`)**
+- provides the full history and explicitly asks for a *completely different* strategy, preventing the agent from re-suggesting what already failed.
 
 ---
 
