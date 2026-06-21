@@ -11,3 +11,7 @@ wheels/
 .env
 assignment-test.ipynb
 tests/
+
+.python-version
+pyproject.toml
+uv.lock

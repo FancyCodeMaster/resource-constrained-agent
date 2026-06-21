@@ -2,3 +2,4 @@ openai
 ddgs
 tiktoken
 python-dotenv
+gradio
