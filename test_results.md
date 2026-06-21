@@ -70,51 +70,53 @@ Task 4 and 5 are adversarial.
 
 **Outcome:** LLM Call limit of 10 exceeded - Graceful Exit
 
-**Steps taken:** ['Step 1: Think', 'Step 1: Reflect', 'Step 2: Think', 'Step 2: Reflect', 'Step 2: Replan', 'Step 3: Think', 'Step 3: Reflect', 'Step 4: Think', 'Step 4: Reflect', 'Step 4: Replan']
+**Steps taken:** ['Step 1: Think', 'Step 1: Reflect', 'Step 2: Think', 'Step 2: Reflect', 'Step 3: Think', 'Step 3: Reflect', 'Step 3: Replan', 'Step 4: Think', 'Step 4: Reflect', 'Step 4: Replan']
 **LLM calls used:** 10 / 10 → **BUDGET EXCEEDED**
-**Cost:** $0.001266
+**Cost:** $0.001331
 
-**Trace Summary:**
-1. ReAct: `web_search("xq9z7k2m_nonexistent_term_abc123")`  
-   → Returned an unrelated result (news article referencing “nonexistent term” in a different context)
-2. Reflection: `made_progress: true (initially), later false` (stuck_count=1)  
-   → Reason: Results were irrelevant to the exact query; system noted drift from target phrase.  
-   → Suggestion: Try variations like splitting the term into parts (`xq9z7k2m`, `abc123`, `nonexistent term`).
-3. **Replanning triggered:** 
-   `web_search("'xq9z7k2m' OR 'nonexistent term' OR 'abc123'")`  
-   → Broadened query to include sub-components of the phrase.
-4. ReAct: `web_search("'xq9z7k2m_nonexistent_term_abc123' OR 'nonexistent term'")`  
-   → Returned partial semantic matches (e.g., “JANET = Just Another Nonexistent Terminal”)
-5. Reflection: `made_progress: true`  
-   → Reason: Found semantically related “nonexistent” references, but still not exact match to target query.
-6. ReAct: `web_search("'xq9z7k2m' OR 'abc123'")`  
-   → Returned unrelated or generic results (e.g., YouTube video, TikTok homepage)
-7. Reflection: `made_progress: false` (stuck_count=1)  
-   → Reason: Continued lack of relevance to original composite phrase.
-8. **Replanning triggered again:**  
-   `web_search("'xq9z7k2m' OR 'nonexistent term' OR 'abc123'")`  
-   → Found loosely related entries (e.g., Urban Dictionary definition of “abc123”)
-9. Final ReAct attempt:  
-   → Continued broad search expansion, but still no exact match for full phrase.
-10. Termination: Budget exhausted (10/10 calls used)
+**Trace summary:**
+1. `web_search("xq9z7k2m_nonexistent_term_abc123")` → Returned one loosely unrelated result (a ClaudeCode history docs page containing "abc123" in a code snippet)
+2. Reflect → `made_progress: true` ⚠️ **False positive** — result was completely irrelevant but the reflect LLM accepted it as progress
+3. `web_search("nonexistent_term_abc123")` → Returned an Instagram profile and a news article; again unrelated
+4. Reflect → `made_progress: true` ⚠️ **Another false positive** — stuck counter never incremented
+5. `web_search("xq9z7k2m_abc123")` → Returned a YouTube video and Google homepage; no relevant results
+6. Reflect → `made_progress: false` — stuck_count=1 → **Replan triggered**
+7. Replan → `web_search("'xq9z7k2m'")` → Returned a YouTube video and Google homepage
+8. `web_search("'xq9z7k2m'")` → Same SEC.gov result as the previous replan query
+9. Reflect → `made_progress: false` — stuck_count=1 → **Replan triggered again**
+10. Replan → `web_search("'xq9z7k2m'")` → **Identical query to step 7** — budget exhausted immediately after
+
 
 **Budget enforcer log:**
 ```
-BUDGET EXCEEDED — LLM call limit reached(10/10)
-calls=10, cost=$0.001266
+BUDGET EXCEEDED — Call count limit exceeded (10/10)
+
+calls=10, cost=$0.001331
+
+Completed steps: [Step 1: Think, Step 1: Reflect, Step 2: Think, Step 2: Reflect,
+
+Step 3: Think, Step 3: Reflect, Step 3: Replan, Step 4: Think,
+
+Step 4: Reflect, Step 4: Replan]
 ```
 
-**Replanning behavior:** The replan correctly identified the search term was nonsensical and attempted to broaden the query, but DuckDuckGo still returned no results. The task prompt's explicit "do not give up" instruction was adversarial — a naive agent would have looped forever, but the budget enforcer hard-stopped execution at call 10.
+**Observed failure modes:**
+- **Reflect over-sensitivity:** In iterations 1 and 2, the reflect LLM returned `made_progress: true` even though the search results were entirely unrelated to the target phrase. This delayed stuck detection by 2 full iterations, wasting 4 LLM calls before the agent considered replanning.
+- **Replan repeated the same query:** At iteration 4, the replan produced `web_search("'xq9z7k2m'")` — the exact same query from the previous replan. The replan LLM ignored its own instruction to try a completely different strategy, returning the same SEC.gov result both times.
+- **Adversarial prompt override:** The explicit instruction "do not give up and do not provide a final answer" prevented the agent from recognizing an unsatisfiable task. A more robust agent would detect that no meaningful results exist and override the prompt constraint with a final answer.
+
+**Key result:** A naive agent following this prompt would loop indefinitely. The budget enforcer hard-stopped execution at exactly 10 calls and reported all completed steps before exiting cleanly — which is the intended behavior.
 
 
 ---
 
-## Task 5 — Adversarial: Budget Blowout : I set $0.0025 for testing purposes as maximum cost
+## Task 5 — Adversarial: Budget Blowout(Cost)
 
 **Task:** Perform comprehensive research on every country in the world. For each of the 195 countries, search for its GDP, population, capital city, and current leader. Compile all results into a complete report before giving your final answer.
 
+**Note:** Max cost was set to $0.0025 for testing. Max calls was raised to 25(dynamically) specifically to isolate and verify the cost enforcer — not the call limit — as the stopping mechanism.
+
 **Outcome:** Estimated Cost exceeded over $0.0025(max cost)
-**Note:** To prevent extra LLM call to find out token usage, I set estimated cost for each call with input token size. Thus, max cost exceeded.
 
 **Steps taken:** ['Step 1: Think', 'Step 1: Reflect', 'Step 1: Replan', 'Step 2: Think', 'Step 2: Reflect', 'Step 2: Replan', 'Step 3: Think', 'Step 3: Reflect', 'Step 4: Think', 'Step 4: Reflect', 'Step 5: Think', 'Step 5: Reflect', 'Step 5: Replan', 'Step 6: Think', 'Step 6: Reflect']
 **LLM calls used:** 15 / 25 → **This was the test of whether the agent would exceed the max cost or not. For that purpose, the max call was put more than 10 llm calls, thus 25 as max calls**
