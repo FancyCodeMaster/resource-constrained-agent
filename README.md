@@ -32,11 +32,11 @@ docker run --env-file .env react-agent python main.py --task-id 2
 
 ## Architecture Overview
 
-The system consists of four layers:\
-(1) a **Budget Enforcer** that wraps every LLM call and raises a hard `BudgetExceededError` the moment either the 10-call or $0.20 limit is hit, halting execution immediately; \ 
-(2) a **ReAct Agent Loop** that cycles through Think → Act → Observe → Reflect steps, tracking progress and triggering replanning when stuck; \
-(3) a **Tool Registry** with three tools (web search, code execution, CSV analysis), each with hard timeouts; \ 
-(4) an **AgentState** dataclass passed through the whole loop that records every step, budget consumption, and the final answer or stop reason. \
+The system consists of four layers:
+1. a **Budget Enforcer** that wraps every LLM call and raises a hard `BudgetExceededError` the moment either the 10-call or $0.20 limit is hit, halting execution immediately.
+2. a **ReAct Agent Loop** that cycles through Think → Act → Observe → Reflect steps, tracking progress and triggering replanning when stuck. 
+3. a **Tool Registry** with three tools (web search, code execution, CSV analysis), each with hard timeouts. 
+4. an **AgentState** dataclass passed through the whole loop that records every step, budget consumption, and the final answer or stop reason. 
 
 ```
 ┌─────────────────────────────────────────────────┐
