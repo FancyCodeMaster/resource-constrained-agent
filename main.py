@@ -112,6 +112,12 @@ def main():
             if value <= 0:
                 raise argparse.ArgumentTypeError("must be a positive integer (> 0)")
             return value
+    
+    def positive_float(value):
+        value = float(value)
+        if value <= 0:
+            raise argparse.ArgumentTypeError("must be a positive float (> 0)")
+        return value
 
     def task_id_range(value):
         value = int(value)
@@ -122,7 +128,7 @@ def main():
     parser = argparse.ArgumentParser(description="Resource-Constrained ReAct Agent")
     parser.add_argument("--task", type=str, help="Run a single custom task")
     parser.add_argument("--max_iter", type=positive_int, default=None, help="Maximum number of iterations")
-    parser.add_argument("--max_cost", type=float, default=None, help="Maximum cost limit in dollars")
+    parser.add_argument("--max_cost", type=positive_float, default=None, help="Maximum cost limit in dollars")
     parser.add_argument("--task-id", type=task_id_range, help="Run a specific test task (1-5)")
 
     args = parser.parse_args()
