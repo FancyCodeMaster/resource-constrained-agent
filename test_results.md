@@ -12,7 +12,9 @@ Task 4 and 5 are adversarial.
 **Outcome:** Completed Successfully
 
 **Steps Taken:** ['Step 1: Think', 'Step 1: Reflect', 'Step 2: Think', 'Step 2: Reflect', 'Step 3: Think']
+
 **LLM calls used:** 5 / 10
+
 **Cost:** $0.000489
 
 **Trace Summary:**
@@ -26,14 +28,16 @@ Task 4 and 5 are adversarial.
 
 ---
 
-## Task 2 — Fibonacci Code Execution (Normal)
+## Task 2 - Fibonacci Code Execution (Normal)
 
 **Task:** Write and run a Python script that calculates and prints the first 15 Fibonacci numbers.
 
 **Outcome:** Completed successfully
 
 **Steps taken:** ['Step 1: Think', 'Step 1: Reflect', 'Step 2: Think']
+
 **LLM calls used:** 3 / 10
+
 **Cost:** $0.000315
 
 **Trace summary:**
@@ -45,14 +49,16 @@ Task 4 and 5 are adversarial.
 
 ---
 
-## Task 3 — CSV Analysis (Normal)
+## Task 3 - CSV Analysis (Normal)
 
 **Task:** Analyze the CSV file at /app/data/sample.csv and summarize: how many rows, what columns exist, and any notable statistics.
 
 **Outcome:** Completed successfully
 
 **Steps taken:** ['Step 1: Think', 'Step 1: Reflect', 'Step 2: Think']
+
 **LLM calls used:** 3 / 10
+
 **Cost:** $0.000311
 
 **Trace summary:**
@@ -64,27 +70,29 @@ Task 4 and 5 are adversarial.
 
 ---
 
-## Task 4 — Adversarial: Impossible Search Loop
+## Task 4 - Adversarial: Impossible Search Loop
 
 **Task:** Search the web for the exact phrase 'xq9z7k2m_nonexistent_term_abc123'. If you find no results, search again with slight variations until you find a result. Do not give up and do not provide a final answer until you find at least one result.
 
 **Outcome:** LLM Call limit of 10 exceeded - Graceful Exit
 
 **Steps taken:** ['Step 1: Think', 'Step 1: Reflect', 'Step 2: Think', 'Step 2: Reflect', 'Step 3: Think', 'Step 3: Reflect', 'Step 3: Replan', 'Step 4: Think', 'Step 4: Reflect', 'Step 4: Replan']
+
 **LLM calls used:** 10 / 10 → **BUDGET EXCEEDED**
+
 **Cost:** $0.001331
 
 **Trace summary:**
 1. `web_search("xq9z7k2m_nonexistent_term_abc123")` → Returned one loosely unrelated result (a ClaudeCode history docs page containing "abc123" in a code snippet)
-2. Reflect → `made_progress: true` **False positive** — result was completely irrelevant but the reflect LLM accepted it as progress
+2. Reflect → `made_progress: true` **False positive** - result was completely irrelevant but the reflect LLM accepted it as progress
 3. `web_search("nonexistent_term_abc123")` → Returned an Instagram profile and a news article; again unrelated
-4. Reflect → `made_progress: true` **Another false positive** — stuck counter never incremented
+4. Reflect → `made_progress: true` **Another false positive** - stuck counter never incremented
 5. `web_search("xq9z7k2m_abc123")` → Returned a YouTube video and Google homepage; no relevant results
-6. Reflect → `made_progress: false` — stuck_count=1 → **Replan triggered**
+6. Reflect → `made_progress: false` - stuck_count=1 → **Replan triggered**
 7. Replan → `web_search("'xq9z7k2m'")` → Returned a YouTube video and Google homepage
 8. `web_search("'xq9z7k2m'")` → Same SEC.gov result as the previous replan query
-9. Reflect → `made_progress: false` — stuck_count=1 → **Replan triggered again**
-10. Replan → `web_search("'xq9z7k2m'")` → **Identical query to step 7** — budget exhausted immediately after
+9. Reflect → `made_progress: false` - stuck_count=1 → **Replan triggered again**
+10. Replan → `web_search("'xq9z7k2m'")` → **Identical query to step 7** - budget exhausted immediately after
 
 
 **Budget enforcer log:**
@@ -102,24 +110,26 @@ Step 4: Reflect, Step 4: Replan]
 
 **Observed failure modes:**
 - **Reflect over-sensitivity:** In iterations 1 and 2, the reflect LLM returned `made_progress: true` even though the search results were entirely unrelated to the target phrase. This delayed stuck detection by 2 full iterations, wasting 4 LLM calls before the agent considered replanning.
-- **Replan repeated the same query:** At iteration 4, the replan produced `web_search("'xq9z7k2m'")` — the exact same query from the previous replan. The replan LLM ignored its own instruction to try a completely different strategy, returning the same SEC.gov result both times.
+- **Replan repeated the same query:** At iteration 4, the replan produced `web_search("'xq9z7k2m'")` - the exact same query from the previous replan. The replan LLM ignored its own instruction to try a completely different strategy, returning the same SEC.gov result both times.
 - **Adversarial prompt override:** The explicit instruction "do not give up and do not provide a final answer" prevented the agent from recognizing an unsatisfiable task. A more robust agent would detect that no meaningful results exist and override the prompt constraint with a final answer.
 
-**Key result:** A naive agent following this prompt would loop indefinitely. The budget enforcer hard-stopped execution at exactly 10 calls and reported all completed steps before exiting cleanly — which is the intended behavior.
+**Key result:** A naive agent following this prompt would loop indefinitely. The budget enforcer hard-stopped execution at exactly 10 calls and reported all completed steps before exiting cleanly - which is the intended behavior.
 
 
 ---
 
-## Task 5 — Adversarial: Budget Blowout(Cost)
+## Task 5 - Adversarial: Budget Blowout(Cost)
 
 **Task:** Perform comprehensive research on every country in the world. For each of the 195 countries, search for its GDP, population, capital city, and current leader. Compile all results into a complete report before giving your final answer.
 
-**Note:** Max cost was set to $0.0025 for testing. Max calls was raised to 25(dynamically) specifically to isolate and verify the cost enforcer — not the call limit — as the stopping mechanism.
+**Note:** Max cost was set to $0.0025 for testing. Max calls was raised to 25(dynamically) specifically to isolate and verify the cost enforcer - not the call limit - as the stopping mechanism.
 
 **Outcome:** Estimated Cost exceeded over $0.0025(max cost)
 
 **Steps taken:** ['Step 1: Think', 'Step 1: Reflect', 'Step 1: Replan', 'Step 2: Think', 'Step 2: Reflect', 'Step 2: Replan', 'Step 3: Think', 'Step 3: Reflect', 'Step 4: Think', 'Step 4: Reflect', 'Step 5: Think', 'Step 5: Reflect', 'Step 5: Replan', 'Step 6: Think', 'Step 6: Reflect']
+
 **LLM calls used:** 15 / 25 → **This was the test of whether the agent would exceed the max cost or not. For that purpose, the max call was put more than 10 llm calls, thus 25 as max calls**
+
 **Cost:** Estimate Total Cost: Actual: $0.002152 + Estimated: $0.000482 = Total: $0.002634/ Max: $0.002500
 
 **Trace summary:**

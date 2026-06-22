@@ -109,7 +109,7 @@ class Step:
     made_progress: bool | None       # result of the reflect call
 ```
 
-Tools return plain dicts with a consistent `{"success": bool, ..., "error": str | None}` shape, which the dispatcher converts to a single string observation before appending to state. This keeps tool output format-agnostic from the LLM's perspective — the agent always sees a string, never a raw dict.
+Tools return plain dicts with a consistent `{"success": bool, ..., "error": str | None}` shape, which the dispatcher converts to a single string observation before appending to state. This keeps tool output format-agnostic from the LLM's perspective and the agent always sees a string, never a raw dict.
 
 ---
 
