@@ -20,7 +20,7 @@ I chose this approach because this acts as a strict cost guard, ensuring the tot
 
 **Decision 2**
 
-I considered using Python's `multiprocessing` module with `Process.join(timeout=...)` to isolate code execution but chose `subprocess.run(..., timeout=timeout)` with a temporary file because subprocess gives us true OS-level process isolation (the sandboxed code cannot touch the parent's memory or globals), the temp-file approach produces accurate line-number tracebacks, and subprocess.TimeoutExpired is a specific, catchable exception — no bare `except` required.
+I considered using Python's `multiprocessing` module with `Process.join(timeout=...)` to isolate code execution but chose `subprocess.run(..., timeout=timeout)` with a temporary file because subprocess gives us true OS-level process isolation (the sandboxed code cannot touch the parent's memory or globals), the temp-file approach produces accurate line-number tracebacks, and subprocess.TimeoutExpired is a specific, catchable exception - no bare `except` required.
 
 ---
 
