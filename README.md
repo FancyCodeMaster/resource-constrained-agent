@@ -166,3 +166,9 @@ With more time, I would add two things:
 ## Test Results
 
 See [`test_results.md`](test_results.md) for detailed outcomes of all 5 tasks.
+
+---
+
+## Decisions
+
+See [`decisions.md`](decisions.md) for engineering decisions i took.
